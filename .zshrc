@@ -1,31 +1,60 @@
-# ---- Tabs (8 -> 4)
+# =========================================================================================
+# COSMETIC TWEAKS
+
+# Directory colors
+export CLICOLOR=1
+
+# Git: Setup prompt
+# '%n' adds the name of the current user to the prompt
+# '$(__git_repo)' adds the repository name
+# '$(__prompt_dir)' adds the current directory unless it is the repository root
+__git_repo() {
+    local root state
+    root=$(git rev-parse --show-toplevel 2>/dev/null) || return
+    git diff --no-ext-diff --quiet || state='*'
+    git diff --no-ext-diff --cached --quiet || state+='+'
+    printf ' (%s%s)' "${root##*/}" "$state"
+}
+__prompt_dir() {
+    local dir root
+    dir=$(pwd -P)
+    root=$(git rev-parse --show-toplevel 2>/dev/null)
+    [[ -n "$root" && "$dir" == "$root" ]] && return
+
+    case "$dir" in
+        "$HOME") dir='~' ;;
+        /)       dir='/' ;;
+        *)       dir=${dir##*/} ;;
+    esac
+    printf ' %s' "$dir"
+}
+setopt prompt_subst
+PROMPT='%F{cyan}%n%F{yellow}$(__git_repo)%F{green}$(__prompt_dir) $ %f'
+
+# Resolve symbolic links
+setopt chase_links
+
+# Tab size (8 -> 4)
 tabs -4
 
-# ---- Colors
-autoload -U colors && colors
+# -----------------------------------------------------------------------------------------
+# DEVELOPMENT ENVIRONMENTS AND ALIASES
 
-# ---- Git info with zsh (vcs_info)
-autoload -Uz vcs_info
-zstyle ':vcs_info:*' enable git
-zstyle ':vcs_info:git:*' check-for-changes true
-zstyle ':vcs_info:git:*' formats '(%b%u%c)'
-zstyle ':vcs_info:git:*' actionformats '(%b|%a%u%c)'
-zstyle ':vcs_info:git:*' unstagedstr '*'
-zstyle ':vcs_info:git:*' stagedstr '+'
-precmd() { vcs_info }
-
-# ---- Prompt (user, git branch, directory)
-setopt prompt_subst
-PROMPT='%F{cyan}%n%f %F{yellow}${vcs_info_msg_0_}%f %F{green}%1~%f %# '
-
-# ---- Python venv
-if [[ -f ~/pe/bin/activate ]]; then
-  source ~/pe/bin/activate
+# Python environment
+PYTHON_ENV="$HOME/pe/bin/activate"
+if [[ -f "$PYTHON_ENV" ]]; then
+    source "$PYTHON_ENV"
 fi
 
-# ---- Completion (zsh + Homebrew)
+# 3D Slicer
+alias slicer='open -a Slicer'
+
+# -----------------------------------------------------------------------------------------
+# ZSH COMPLETION
+
+# Homebrew completions
 if type brew &>/dev/null; then
-  FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
+    FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
 fi
 
 autoload -Uz compinit
